@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> signup</title>
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="../styles/login.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <form class="login-form" id="signupForm">
+            <h2>Signup</h2>
+            <div class="input-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter your Name" required>
+            </div>
+            <div class="input-group">
+                <label for="email">Email:</label>
+                <input type="text" id="email" name="email" placeholder="Enter your Email" required>
+            </div>
+            <div class="input-group">
+                <label for="phone">phone:</label>
+                <input type="text" id="phone" name="phone" placeholder="Enter mobile number" inputmode="numeric" maxlength="10"
+                    pattern="[6-9][0-9]{9}" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+             <button >Sign Up</button>
+            
+        </form>
+        <div class="form-footer">
+                <a href="/user/login">Login Up</a>
+            </div>
+       
+    </div>
+    <script src="/js/axios.min.js"></script>
+     <script src="/js/signup.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Link the external CSS file -->
+    <link rel="stylesheet" href="../styles/login.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <form class="login-form" method="POST" id="loginform">
+            <h2>Login</h2>
+            <div class="input-group">
+                <label for="email">Email:</label>
+                <input type="text" id="email" name="email" placeholder="Enter your Email" required>
+            </div>
+            <div class="input-group">
+                <label for="phone">Phone:</label>
+                <input type="text" name="phone" id="phone" placeholder="Enter mobile number" inputmode="numeric" maxlength="10"
+                    pattern="[6-9][0-9]{9}" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" >Log In</button>
+            <div class="form-footer">
+                <a href="#">Forgot password?</a>
+                <a href="/user/signup">Sign Up</a>
+            </div>
+        </form>
+    </div>
+   <script src="/js/axios.min.js"></script>
+<script src="/js/login.js"></script>
+
+</body>
+
+</html>
