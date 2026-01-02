@@ -24,6 +24,7 @@ async function handleSubmit(e) {
         
         alert("Login successful ✅");
         
+        
         window.location.href = "/";
         // redirect example
         // window.location.href = "/dashboard";
