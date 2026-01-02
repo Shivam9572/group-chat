@@ -10,6 +10,8 @@ import compression from 'compression';
 import db from "./utils/DB.js";
 import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routers/userRouter.js';
+import messageRoutes from './routers/messageRouter.js';
+
 
 const app = express();
 
@@ -25,6 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PORT = process.env.PORT||3000;
 
 app.use('/user', userRoutes);
+app.use('/message', messageRoutes);
 app.get('/', (req, res)=>{
     res.sendFile(path.join(__dirname,'.', 'views',"chat.html"));
 });

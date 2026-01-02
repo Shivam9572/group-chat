@@ -7,10 +7,22 @@
         return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function sendMessage() {
-        const text = messageInput.value.trim();
-        if (!text) return;
-
+    async function sendMessage() {
+       try {
+         const text = messageInput.value.trim();
+        if (!text){
+            alert("Message cannot be empty");
+            return;
+        } 
+        // Save message to server
+       let response = await axios.post('/message/save', { content:text },{headers:{
+            authorization:localStorage.getItem("token")
+       }});
+       if(response.status!==201){
+        alert("Failed to send message");
+        return;
+       }
+      
         const msgDiv = document.createElement("div");
         msgDiv.className = "message sent";
         msgDiv.innerHTML = `
@@ -23,9 +35,11 @@
 
         // Auto-scroll
         chatMessages.scrollTop = chatMessages.scrollHeight;
+       } catch (error) {
+        alert("Error sending message: " + error.message);
+       }
 
-        // Fake reply
-        setTimeout(() => receiveMessage("Got it 👍"), 800);
+      
     }
 
     function receiveMessage(text) {
