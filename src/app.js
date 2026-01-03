@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PORT = process.env.PORT||3000;
 
 app.use('/user', userRoutes);
-app.use('/message', messageRoutes);
+app.use('/api/message', messageRoutes);
 app.get('/', (req, res)=>{
     res.sendFile(path.join(__dirname,'.', 'views',"chat.html"));
 });
