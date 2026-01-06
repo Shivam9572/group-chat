@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/AppError.js';
+import User from '../models/user.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -11,7 +12,7 @@ const authenticate = async(req, res, next) => {
             return;
         }
        
-          jwt.verify(req.headers.authorization,process.env.JWT_SECRET,function(err,result){
+          jwt.verify(req.headers.authorization,process.env.JWT_SECRET, async function(err,result){
                if(err){
                    res.send(err);
                    return;
@@ -20,6 +21,10 @@ const authenticate = async(req, res, next) => {
                req.userId=result.userId;
 
                req.name=result.name;
+               let resultUser=await User.findOne({where:{id:result.userId}});
+               if(!resultUser){
+                     next(new AppError("unauthorized",401));
+               }
               
                next()
            });

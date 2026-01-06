@@ -30,7 +30,11 @@ window.onload=async()=>{
 if(!localStorage.getItem("token")){
     window.location.href="login.html";
 };
-const socket=new io("ws://"+window.location.host+`?token=${localStorage.getItem("token")}`);
+const socket=new io("http://localhost:3000",{
+    auth:{
+        token:localStorage.getItem("token")
+    }
+});
 
      socket.on("chat-message",(message)=>{
         try{
@@ -60,7 +64,7 @@ const socket=new io("ws://"+window.location.host+`?token=${localStorage.getItem(
 
 const boardCastMessage=(message)=>{
     try {    
-        console.log("Sending message via socket:",message);
+        
         
           socket.emit("chat-message",message);
           return true;
