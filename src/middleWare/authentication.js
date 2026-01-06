@@ -18,6 +18,9 @@ const authenticate = async(req, res, next) => {
                }
                
                req.userId=result.userId;
+
+               req.name=result.name;
+              
                next()
            });
     } catch (error) {

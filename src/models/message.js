@@ -15,6 +15,10 @@ const Message = sequlize.define('Message',{
     content:{
         type: DataTypes.TEXT,
         allowNull:false
+    },
+    ownerName:{
+        type: DataTypes.STRING,
+        allowNull:false
     }
 });
 export default Message;

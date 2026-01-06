@@ -15,7 +15,7 @@ export const createUser = async (req, res, next) => {
 
          
         const { name, email, phone, password } = req.body;
-        console.log(name);
+        
 
         if (!name || !password || (!email && !phone)) {
             return next(new AppError("Name or Email or phone and password required", 400));
@@ -64,9 +64,9 @@ export const loginUser = async (req, res, next) => {
         }
         
         let token = jwt.sign(
-            { userId: user.id },
+            { userId: user.id,name:user.name },
             process.env.JWT_SECRET);
-        res.status(200).json({ token, success:true });
+        res.status(200).json({ token, success:true ,name:user.name});
     } catch (error) {
         next(error);
     }

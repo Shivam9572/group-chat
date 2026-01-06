@@ -1,3 +1,77 @@
+let authenticted=async()=>{
+    try {
+        let response=await axios.post('/user/authenticate',{},{headers:{
+            authorization:localStorage.getItem("token"),
+        }});
+        if(response.status===200){
+            return new Promise((resolve,reject)=>{
+                resolve(true);
+            });
+        }
+        return new Promise((resolve,reject)=>{
+            resolve(false);
+        });
+
+    } catch (error) {
+        console.log("Authentication error:",error);
+        return new Promise((resolve,reject)=>{
+            resolve(false);
+        });
+    }
+}
+window.onload=async()=>{
+    let isAuth=await authenticted();
+    if(!isAuth){
+        window.location.href="user/login";
+    }
+
+}
+
+if(!localStorage.getItem("token")){
+    window.location.href="login.html";
+};
+const socket=new io("ws://"+window.location.host+`?token=${localStorage.getItem("token")}`);
+
+     socket.on("chat-message",(message)=>{
+        try{
+            receiveMessage(message.content,message.name);
+        }catch(error){
+           console.log("Error in receiving message via socket:",error);
+        }
+     });
+// socket.onopen=()=>{
+//     try {
+//         console.log("WebSocket connection established.");
+        
+//     } catch (error) {
+//         console.log("WebSocket connection error:",error);
+//         alert("WebSocket connection error.");
+//     }
+// };
+//  socket.onmessage=async(event)=>{
+//     try {
+//         const message=JSON.parse(event.data);
+      
+//        receiveMessage(message.content,message.name);
+//     } catch (error) {
+//         console.log("Error in WebSocket onMessage:",error);
+//     }
+// }
+
+const boardCastMessage=(message)=>{
+    try {    
+        console.log("Sending message via socket:",message);
+        
+          socket.emit("chat-message",message);
+          return true;
+        
+    } catch (error) {
+        console.log("Error in sending message via socket:",error);
+        alert("WebSocket connection error. Message not sent.");
+        return false;
+    }
+}
+
 
 const chatMessages = document.getElementById("chatMessages");
 const messageInput = document.getElementById("messageInput");
@@ -23,18 +97,30 @@ let fetchMessages = async () => {
     });
     for (let msg of response.data.messages) {
         const msgDiv = document.createElement("div");
-        msgDiv.className = "message sent";
-        msgDiv.innerHTML = `
+       
+        if (msg.isOwnMessage!==true) {
+            msgDiv.className = "message received";
+             msgDiv.innerHTML = `
+           <span class="name">${msg.ownerName}</span>
             ${msg.content}
             <span class="timestamp">${formatTimeForIndia(msg.createdAt)}</span>
         `;
+        }else{
+            msgDiv.className = "message sent";
+             msgDiv.innerHTML = `
+            ${msg.content}
+            <span class="timestamp">${formatTimeForIndia(msg.createdAt)}</span>
+        `;
+        }
+        
+       
 
         chatMessages.appendChild(msgDiv);
     }
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
 };
-fetchMessages();
+// fetchMessages();
 
 async function sendMessage() {
     try {
@@ -43,16 +129,12 @@ async function sendMessage() {
             alert("Message cannot be empty");
             return;
         }
-        // Save message to server
-        let response = await axios.post('api/message/save', { content: text }, {
-            headers: {
-                authorization: localStorage.getItem("token")
-            }
-        });
-        if (response.status !== 201) {
-            alert("Failed to send message");
+        if(!boardCastMessage(text)){
             return;
         }
+        // Save message to server
+       
+        
 
         const msgDiv = document.createElement("div");
         msgDiv.className = "message sent";
@@ -73,10 +155,11 @@ async function sendMessage() {
 
 }
 
-function receiveMessage(text) {
+function receiveMessage(text,name) {
     const msgDiv = document.createElement("div");
     msgDiv.className = "message received";
     msgDiv.innerHTML = `
+            <span class="name">${name}</span>
             ${text}
             <span class="timestamp">${getTime()}</span>
         `;

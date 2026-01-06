@@ -21,6 +21,7 @@ async function handleSubmit(e) {
             return;
         }
             localStorage.setItem("token", res.data.token);
+            localStorage.setItem("name", res.data.name);
         
         alert("Login successful ✅");
         

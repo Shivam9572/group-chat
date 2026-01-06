@@ -1,26 +1,35 @@
 import Message from "../models/message.js";
 import AppError from "../utils/AppError.js";
 
-export const saveMessage = async (req, res, next) => {
+export const saveMessage = async (ownerName,userId, content) => {
 
 
    try {
-      let userId = req.userId;
-      const { content } = req.body;
-   
       
-      Message.create({ userId, content });
-      res.status(201).json({ message: "Message saved successfully", success: true });
+      
+    
+      
+      await Message.create({ userId, content,ownerName });
+      return true;
 
    } catch (error) {
       console.log(error);
-      next(new AppError("Failed to save message", 500));
+      return false;
    }
 };  
 
 export const getMessages = async (req, res, next) => {
    try {
-      const messages = await Message.findAll({ order: [['createdAt', 'ASC']],where:{userId:req.userId},attributes:['content','createdAt','userId'] });
+      let messages = await Message.findAll({ order: [['createdAt', 'ASC']],attributes:['content','createdAt','userId','ownerName'] });
+      messages=JSON.stringify(messages);
+      messages=JSON.parse(messages);
+     for(let msg of messages){
+            if(msg.userId===req.userId){
+                  msg.isOwnMessage=true;
+            }
+         
+     }
+     
       res.status(200).json({ messages, success: true });
    } catch (error) {
       console.log(error);

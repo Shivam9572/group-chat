@@ -62,6 +62,14 @@
         color: #666;
         margin-top: 4px;
     }
+    .name{
+   
+        display: block;
+        text-align: left;
+        font-size: 10px;
+        color: #6952AD;
+        margin-top: 4px;
+    }
      .chat-input {
         display: flex;
         padding: 10px;
