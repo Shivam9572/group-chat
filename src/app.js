@@ -9,7 +9,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import http from 'http';
 import db from "./utils/DB.js";
-import connectToWebSocket from  "./controllers/connectToServer.js";
+import connectToWebSocket from  "./socketIO/connectToServer.js";
 import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routers/userRouter.js';
 import messageRoutes from './routers/messageRouter.js';

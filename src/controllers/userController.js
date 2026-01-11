@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User from "../models/user.js";
 import AppError from "../utils/AppError.js";
 import {Op} from "sequelize";
 import sequelize from "../utils/DB.js";

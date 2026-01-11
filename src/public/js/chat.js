@@ -43,24 +43,7 @@ const socket=new io("http://localhost:3000",{
            console.log("Error in receiving message via socket:",error);
         }
      });
-// socket.onopen=()=>{
-//     try {
-//         console.log("WebSocket connection established.");
-        
-//     } catch (error) {
-//         console.log("WebSocket connection error:",error);
-//         alert("WebSocket connection error.");
-//     }
-// };
-//  socket.onmessage=async(event)=>{
-//     try {
-//         const message=JSON.parse(event.data);
-      
-//        receiveMessage(message.content,message.name);
-//     } catch (error) {
-//         console.log("Error in WebSocket onMessage:",error);
-//     }
-// }
+
 
 const boardCastMessage=(message)=>{
     try {    
