@@ -9,7 +9,11 @@ import User from "../models/user.js";
 
 let clients = [];
 const connectToServer = async(server) => {
-    const io = new Server( server );
+    const io = new Server( server ,{
+        cors:{
+            origin:process.env.NODE_ENV==="production"?false:['http://localhost:3000','http://localhost:5500']
+        }
+    });
     io.use(async(socket, next) => {
         const token = socket.handshake.auth.token;
         if (!token) {
