@@ -98,3 +98,18 @@
     .chat-input button:hover {
         background: #064c45;
     }
+    .joinRoom{
+        position: absolute;
+        left: 0;
+        margin: 5%;
+        top:0;
+        padding: 2px;
+        border-top: 2px solid red;
+        border-right: 2px solid red;
+        height: 80vh;
+    }
+    .joinRoom > input{
+        border-radius: 10px;
+        width: 15vw;
+        padding: 5px;
+    }

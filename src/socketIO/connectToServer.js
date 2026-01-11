@@ -2,6 +2,7 @@
 import { Server } from "socket.io";
 import { socketAuth } from "./middleware.js";
 import { newMessage } from "./socketHandlers/chat.js";
+import { personalChat } from "./socketHandlers/personalChat.js";
 
 const connectToServer = async(server) => {
     const io = new Server( server ,{
@@ -14,6 +15,8 @@ const connectToServer = async(server) => {
     io.on("connection", async(socket) => {
            
          newMessage(socket);
+         personalChat(socket,io);
+
 
     });
 

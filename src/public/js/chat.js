@@ -1,59 +1,62 @@
-let authenticted=async()=>{
+let authenticted = async () => {
     try {
-        let response=await axios.post('/user/authenticate',{},{headers:{
-            authorization:localStorage.getItem("token"),
-        }});
-        if(response.status===200){
-            return new Promise((resolve,reject)=>{
+        let response = await axios.post('/user/authenticate', {}, {
+            headers: {
+                authorization: localStorage.getItem("token"),
+            }
+        });
+        if (response.status === 200) {
+            return new Promise((resolve, reject) => {
                 resolve(true);
             });
         }
-        return new Promise((resolve,reject)=>{
+        return new Promise((resolve, reject) => {
             resolve(false);
         });
 
     } catch (error) {
-        console.log("Authentication error:",error);
-        return new Promise((resolve,reject)=>{
+        console.log("Authentication error:", error);
+        return new Promise((resolve, reject) => {
             resolve(false);
         });
     }
 }
-window.onload=async()=>{
-    let isAuth=await authenticted();
-    if(!isAuth){
-        window.location.href="user/login";
+window.onload = async () => {
+    let isAuth = await authenticted();
+    if (!isAuth) {
+        window.location.href = "user/login";
     }
 
 }
 
-if(!localStorage.getItem("token")){
-    window.location.href="login.html";
+if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
 };
-const socket=new io("http://localhost:3000",{
-    auth:{
-        token:localStorage.getItem("token")
+const socket = new io("http://localhost:3000", {
+    auth: {
+        token: localStorage.getItem("token")
     }
 });
 
-     socket.on("chat-message",(message)=>{
-        try{
-            receiveMessage(message.content,message.name);
-        }catch(error){
-           console.log("Error in receiving message via socket:",error);
-        }
-     });
-
-
-const boardCastMessage=(message)=>{
-    try {    
-        
-        
-          socket.emit("chat-message",message);
-          return true;
-        
+socket.on("new-message", (senderName, message) => {
+    try {
+        receiveMessage(message, senderName);
     } catch (error) {
-        console.log("Error in sending message via socket:",error);
+        console.log("Error in receiving message via socket:", error);
+    }
+});
+
+
+const boardCastMessage = (message) => {
+    try {
+
+      
+        socket.emit("new-message", message, window.room);
+        
+        return true;
+
+    } catch (error) {
+        console.log("Error in sending message via socket:", error);
         alert("WebSocket connection error. Message not sent.");
         return false;
     }
@@ -84,23 +87,23 @@ let fetchMessages = async () => {
     });
     for (let msg of response.data.messages) {
         const msgDiv = document.createElement("div");
-       
-        if (msg.isOwnMessage!==true) {
+
+        if (msg.isOwnMessage !== true) {
             msgDiv.className = "message received";
-             msgDiv.innerHTML = `
+            msgDiv.innerHTML = `
            <span class="name">${msg.ownerName}</span>
             ${msg.content}
             <span class="timestamp">${formatTimeForIndia(msg.createdAt)}</span>
         `;
-        }else{
+        } else {
             msgDiv.className = "message sent";
-             msgDiv.innerHTML = `
+            msgDiv.innerHTML = `
             ${msg.content}
             <span class="timestamp">${formatTimeForIndia(msg.createdAt)}</span>
         `;
         }
-        
-       
+
+
 
         chatMessages.appendChild(msgDiv);
     }
@@ -116,12 +119,12 @@ async function sendMessage() {
             alert("Message cannot be empty");
             return;
         }
-        if(!boardCastMessage(text)){
+        if (!boardCastMessage(text)) {
             return;
         }
         // Save message to server
-       
-        
+
+
 
         const msgDiv = document.createElement("div");
         msgDiv.className = "message sent";
@@ -142,7 +145,7 @@ async function sendMessage() {
 
 }
 
-function receiveMessage(text,name) {
+function receiveMessage(text, name) {
     const msgDiv = document.createElement("div");
     msgDiv.className = "message received";
     msgDiv.innerHTML = `
@@ -159,3 +162,19 @@ function receiveMessage(text,name) {
 messageInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessage();
 });
+let emailInput = document.getElementById("email");
+emailInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        try {
+            let email = e.target.value;
+            socket.emit("join-room", email);
+           
+            window.room = email;
+            alert("joined room");
+             e.target.value="";
+        } catch (error) {
+          console.log(error);
+          alert(error.message);
+        }
+    }
+})
