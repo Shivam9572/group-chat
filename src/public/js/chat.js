@@ -166,11 +166,13 @@ let emailInput = document.getElementById("email");
 emailInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         try {
-            let email = e.target.value;
-            socket.emit("join-room", email);
+            let r_email = e.target.value;
+            let s_email=localStorage.getItem("email");
+            let room=[r_email,s_email].sort().join("-");
+            socket.emit("join-room", room);
            
-            window.room = email;
-            alert("joined room");
+            window.room = room;
+            alert("joined room:"+room);
              e.target.value="";
         } catch (error) {
           console.log(error);
