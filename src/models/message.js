@@ -8,17 +8,30 @@ const Message = sequlize.define('Message',{
         allowNull:false,
         primaryKey:true
     },
-    userId:{
-        type: DataTypes.INTEGER,
-        allowNull:false
+ 
+    type:{
+        type:DataTypes.ENUM("text","image","video","audio","document"),
+        defaultValue:"text"
     },
     content:{
         type: DataTypes.TEXT,
-        allowNull:false
+        allowNull:true
     },
     ownerName:{
         type: DataTypes.STRING,
         allowNull:false
+    },
+    mediaUrl:{
+        type:DataTypes.STRING,
+        allowNull:true
+    },
+    status:{
+        type:DataTypes.ENUM("sent","delivered","read"),
+        defaultValue:"sent"
+    },
+    isDeletedForEveryone:{
+        type:DataTypes.BOOLEAN,
+        defaultValue:false
     }
 });
 export default Message;

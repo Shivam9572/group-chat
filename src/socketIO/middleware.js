@@ -17,7 +17,7 @@ export const socketAuth=(io)=>{
             if(!user){
                 return next(new Error("Authentication error"));
             }
-            socket.user=user;
+            socket.user=user.toJSON();
             next();
         } catch (error) {
             return next(new Error("Authentication error"));

@@ -1,15 +1,13 @@
+import { boardcastMessage } from "./group.js";
+import { personalChat } from "./personalChat.js";
 
-
-export const newMessage=(socket)=>{
-     socket.on("chat-message", (message) => {
-            try {
-                socket.broadcast.emit("chat-message", {
-                    content: message,
-                    name: socket.user.name});
-               
-
-            } catch (error) {
-                console.log("Error in saving or broadcasting message:", error);
-            }
-        });
+export const chat=(io,socket,connection)=>{
+     socket.on("send-message",(text,id,chat)=>{
+        if(chat==="chat"){
+            personalChat(io,socket,connection,id,text);
+        }
+        if(chat==="group"){
+            boardcastMessage(io,socket,id,text);
+        }
+     })
 }

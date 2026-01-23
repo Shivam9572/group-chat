@@ -29,6 +29,23 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    about:{
+        type:DataTypes.STRING(150),
+        defaultValue:"Hay there! I am using Whatsapp"
+    },
+    profilePic:{
+        type:DataTypes.STRING,
+        allowNull:true
+    },
+    isOnline:{
+        type:DataTypes.BOOLEAN,
+        defaultValue:false
+    },
+    lastSeen:{
+        type:DataTypes.DATE,
+        allowNull:true
+    },
+    
 
 });
 export default User;

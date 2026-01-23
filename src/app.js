@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import http from 'http';
 import db from "./utils/DB.js";
+import models from "./models/association.js";
 import connectToWebSocket from  "./socketIO/connectToServer.js";
 import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routers/userRouter.js';
@@ -30,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT||3000;
 const server = http.createServer(app);
-connectToWebSocket(server);
+connectToWebSocket(server,app);
 
 app.use('/user', userRoutes);
 app.use('/api/message', messageRoutes);

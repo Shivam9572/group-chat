@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,24 +8,81 @@
     <title>Group Chat</title>
     <script src="/socket.io/socket.io.js"></script>
 </head>
+
 <body>
-    <div class="joinRoom">
-        <input type="text" id="email" >
-    </div>
-    <div class="chat-container">
-    <div class="chat-header">Chat with Alex</div>
+    
+    <div class="chat-container" id="search-user" style="display: none;">
 
-    <div class="chat-messages" id="chatMessages">
-        
+        <div id="search-box">
+            <button id="search-back" style="background: transparent;"><img src="/media/back.png"></button>
+            <input type="text" id="search">
+        </div>
+        <div class="connection-list" id="search-user-list">
+        </div>
+    </div>
+    <div class="chat-container" id="connection-user">
+        <div class="chat-header"><img src="/media/logo.png" width="5px" height="5px">
+            <p>Group Chat</p>
+            <button id="create-group-btn">Create Group</button>
+        </div>
+        <div id="create-group-div" style="display: none;">
+            <input type="text" id="create-group-input">
+            <button id="create-group">Create</button>
+        </div>
+        <div id="select-chat">
+            <button style="border-bottom: 3px solid rgb(6, 235, 101);" class="select-chat"
+                id="select-chat-btn">chat</button>
+            <button class="select-chat" id="select-group-chat-btn">Group Chats</button>
+        </div>
+        <button id="new-chat"><img src="/media/new-chat.png" alt=""></button>
+        <div class="connection-list" id="connection-user-list">
+
+
+        </div>
+        <div class="connection-list" id="group-connection-list" style="display: none;">
+
+        </div>
+
+
+
     </div>
 
-    <div class="chat-input">
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-        <button onclick="sendMessage()">➤</button>
-    </div>
-</div>
-<script src="/js/axios.min.js"></script>
+    <div class="chat-container" id="chat-start" style="display: none;">
+        <div class="chat-header"><img src="/media/profile.png" width="5px" height="5px">
+            <p id="chat-user-name">Rahul Kumar</p>
+            <button id="add-member" style="display: none;">Add Member</button>
+        </div>
+        <div class="chat-messages" id="add-member-search" style="display:none;">
+            <div>
+                <input type="text" id="add-member-input" style="border-radius: 10px;">
 
-<script src="/js/chat.js"></script>
+            </div>
+            <div id="member-search-list"></div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+
+        </div>
+        <input type="file" id="mediaInput" hidden />
+        <div id="options" style="display:none">
+            <button onclick="selectType('image/*')">🖼 Image</button>
+            <button onclick="selectType('video/*')">🎥 Video</button>
+            <button onclick="selectType('audio/*')">🎵 Audio</button>
+            <button onclick="selectType('.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip')">
+                📄 Document
+            </button>
+        </div>
+        <div id="preview"></div>
+        <button onclick="send()" id="sendMedia" style="display: none;">Send</button>
+        <div class="chat-input">
+            <button onclick="openPicker()" >+</button>
+            <input type="text" id="messageInput" placeholder="Type a message..." />
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+    <script src="/js/axios.min.js"></script>
+
+    <script src="/js/chat.js"></script>
 </body>
+
 </html>

@@ -23,6 +23,7 @@ async function handleSubmit(e) {
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("name", res.data.name);
             localStorage.setItem("email",res.data.email);
+            localStorage.setItem("phone",res.data.phone);
         
         alert("Login successful ✅");
         
