@@ -5,16 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/styles/chat.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Group Chat</title>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
-    
+
     <div class="chat-container" id="search-user" style="display: none;">
 
         <div id="search-box">
-            <button id="search-back" style="background: transparent;"><img src="/media/back.png"></button>
+            <button id="search-back"  style="background: transparent;"><img src="/media/back.png"></button>
             <input type="text" id="search">
         </div>
         <div class="connection-list" id="search-user-list">
@@ -62,6 +64,7 @@
 
         <div class="chat-messages" id="chatMessages">
 
+
         </div>
         <input type="file" id="mediaInput" hidden />
         <div id="options" style="display:none">
@@ -73,16 +76,20 @@
             </button>
         </div>
         <div id="preview"></div>
-        <button onclick="send()" id="sendMedia" style="display: none;">Send</button>
+        <button onclick="deletePreview()" style="display: none;" id="cancelMedia">Cancel</button>
+        <button id="sendMedia" style="display: none;">Send</button>
         <div class="chat-input">
-            <button onclick="openPicker()" >+</button>
+            <button id="open-picker">+</button>
             <input type="text" id="messageInput" placeholder="Type a message..." />
             <button onclick="sendMessage()">➤</button>
         </div>
     </div>
     <script src="/js/axios.min.js"></script>
+    <script src="/js/auth.js"></script>
 
     <script src="/js/chat.js"></script>
+    <script src="/js/sendMedia.js"></script>
+
 </body>
 
 </html>

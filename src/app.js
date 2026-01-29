@@ -20,9 +20,9 @@ import messageRoutes from './routers/messageRouter.js';
 const app = express();
 
 
-app.use(compression());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.set("views", path.join(__dirname, "src", "pages"));

@@ -30,7 +30,7 @@
        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
    }
 
-   .chat-container>button:nth-of-type(1) {
+   #new-chat {
        background: transparent;
        border: none;
        position: absolute;
@@ -38,7 +38,7 @@
        bottom: 50px;
    }
 
-   .chat-container>button:nth-of-type(1):hover {
+   #new-chat:hover {
        cursor: pointer;
    }
 
@@ -292,7 +292,7 @@
    #preview {
        position: absolute;
        background: lightgrey;
-       bottom: 9%;
+       bottom: 12%;
        margin: 5px;
        padding-bottom: 10%;
    }
@@ -322,4 +322,90 @@
   color: #0b93f6;
   text-decoration: none;
   font-weight: 500;
+}
+#sendMedia{
+        display: flex;
+    position: absolute;
+    right: 32%;
+    bottom: 13%; 
+    border: 2px solid black;
+    border-radius: 40%;
+    padding: 2px;
+    background: mediumseagreen;
+}
+#cancelMedia{
+        position: absolute;
+    display: flex;
+    left: 10%;
+    bottom: 13%;
+    border-radius: 10px;
+    border: 1px solid black;
+    padding: 2px;
+    background: mediumseagreen;
+}
+.send-message >img{
+   width: 98%;
+   
+}
+.send-message >video{
+   width: 98%;
+   
+}
+.send-message >audio{
+   width: 98%;
+   
+}
+.send-message >div{
+   display: flex;
+    width: 127px;
+    font-size: 0.6rem;
+}
+.send-message{
+    position: relative;
+    display: flex;
+    margin-left: 25%;
+    padding: 4px;
+    background: #dcf8c6;
+    margin-bottom: 1rem;
+    padding-bottom: 2rem;
+}
+.progress-text{
+  text-align: center;
+    font-size: 12px;
+}
+.progress-overlay{
+    display: flex;
+    position: absolute;
+    right: 10px;
+    bottom: 6px;
+    width: auto;
+    gap: 2px;
+    justify-content: flex-end;
+    align-items: center;
+}
+.blurred {
+  filter: blur(8px);
+  transform: scale(1.05); /* prevents edge blur gaps */
+}
+
+.overlay-btn {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+    padding: 0.12rem;
+}
+
+.overlay-btn:hover {
+  background: rgba(0,0,0,0.75);
 }

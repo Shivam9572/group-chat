@@ -27,7 +27,7 @@ const connectToServer = async (server, app) => {
             searchUser(socket);
             searchMember(socket);
 
-            addMember(socket);
+            addMember(socket,connection);
             socket.on("disconnect", async () => {
                 delete connection[socket.user.id];
 

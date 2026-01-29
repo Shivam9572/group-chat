@@ -29,7 +29,7 @@ const authenticate = async(req, res, next) => {
                next()
            });
     } catch (error) {
-        console.log(error);
+        console.log("unauthorize");
         next(new AppError("unauthorized",401));
     }
 

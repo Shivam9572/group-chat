@@ -17,20 +17,22 @@ export const createGroup=(socket)=>{
         }
     })
 }
-export const addMember=(socket)=>{
-    socket.on("add-member",async(groupId,userId)=>{
+export const addMember=(socket,connection)=>{
+    socket.on("add-member",async(groupId,userId,callBack)=>{
         try {
             let user=await GroupMember.findOne({where:{groupID:groupId,userID:userId}});
         if(user){
             user=user.toJSON();
+            callBack("Allready exits");
             
-            socket.emit("already-exit");
             return;
         }
         let groupMember=await GroupMember.create({groupID:groupId,userID:userId,role:"member"});
+            let group=await Group.findOne({where:{id:groupId}});
+            group=group.toJSON();
            socket.join(groupId);
-            
-            socket.emit("add-member",userId,groupId);
+            callBack("Add Member");
+            socket.to(connection[userId]).emit("add-member",group);
         
         } catch (error) {
             console.log(error);
@@ -50,8 +52,11 @@ export const boardcastMessage=async(io,socket,roomId,text)=>{
                 model:Group,
                 as:"groupInfo"
             }]});
-            sendmessage=JSON.parse(JSON.stringify(sendmessage));
-           
+            sendmessage=sendmessage.toJSON();
+             sendmessage.sender=sendmessage.senderInfo;
+             sendmessage.group=sendmessage.groupInfo;
+             delete sendmessage.senderInfo;
+             delete sendmessage.groupInfo;
             
             io.to(roomId).emit("new-message",sendmessage,"group");
         } catch (error) {

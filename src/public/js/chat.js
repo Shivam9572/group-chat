@@ -1,39 +1,34 @@
 
-if (!localStorage.getItem("token")) {
-    window.location.href = "/user/login";
-};
-let s3Url = `https://group-chat-9572.s3.ap-south-1.amazonaws.com/`;
-let authenticted = async () => {
-    try {
-        let response = await axios.post('/user/authenticate', {}, {
-            headers: {
-                authorization: localStorage.getItem("token"),
-            }
-        });
-        if (response.status === 200) {
-            return new Promise((resolve, reject) => {
-                resolve(true);
-            });
-        }
-        return new Promise((resolve, reject) => {
-            resolve(false);
-        });
 
-    } catch (error) {
-        console.log("Authentication error:", error);
-        return new Promise((resolve, reject) => {
-            resolve(false);
-        });
-    }
+let awsUrl = "https://group-chat-9572.s3.ap-south-1.amazonaws.com/";
+let messages = {};
+const chatUI = {};
+async function getFileMeta(url) {
+  const res = await fetch(url, { method: "HEAD" });
+  let type = getMediaType(res.headers.get("content-type"));
+  let size = formatSize(res.headers.get("content-length"));
+  return {
+    type,     // image/png
+    size   // bytes
+  };
 }
-window.onload = async () => {
-    let isAuth = await authenticted();
-    if (!isAuth) {
-        window.location.href = "user/login";
-    }
 
+function formatSize(bytes) {
+  if (!bytes) return "Unknown";
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return (bytes / Math.pow(1024, i)).toFixed(2) + " " + sizes[i];
 }
-var messages = {};
+
+function getMediaType(mime) {
+  if (!mime) return "text";
+
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+
+  return "text";
+}
 async function recoverMessage() {
     try {
         let response = await axios.post("/api/message/recover-message", {}, {
@@ -42,23 +37,26 @@ async function recoverMessage() {
             }
         });
 
-        response.data.messages.forEach((data) => {
-
-            messageUpdate(data);
+       for(data of response.data.messages) {
+            await messageUpdate(data);
+            
             if (data.sender.email === localStorage.getItem("email")) {
                 userConnectionUI(data.recieverID);
             } else {
                 userConnectionUI(data.senderID);
             }
 
-        });
+        };
 
     } catch (error) {
         console.log(error);
     }
 }
 recoverMessage();
-function messageUpdate(message) {
+async function messageUpdate(message) {
+  
+    let currentChatUI = document.getElementById("chatMessages");
+    let messageUI;
     if (message.sender.email === localStorage.getItem("email")) {
         if (!messages[message.recieverID]) {
             messages[message.recieverID] = {
@@ -67,12 +65,24 @@ function messageUpdate(message) {
                 message: []
             };
         }
+        if (!chatUI[message.recieverID]) {
+            chatUI[message.recieverID] = [];
+        }
+        userConnectionUI(message.recieverID);
+
         let time = formatTimeForIndia(message.createdAt);
-        messages[message.recieverID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaUrl: message.mediaUrl });
-        if (message.status === "delivered") {
 
-            messages[message.recieverID].delivered = messages[message.recieverID].message.length - 1;
-
+        if (message.media) {
+             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey }, true);  
+               
+        } else {
+            //  messages[message.recieverID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, });
+             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, }, true);  
+        }
+        chatUI[message.recieverID].push(messageUI);
+        if(message.recieverID===window.currentId){
+           currentChatUI.append(messageUI);
+           currentChatUI.scroll=currentChatUI.scrollHeight;
         }
     } else {
         if (!messages[message.senderID]) {
@@ -82,9 +92,33 @@ function messageUpdate(message) {
                 message: []
             };
         }
+        if (!chatUI[message.senderID]) {
+            chatUI[message.senderID] = [];
+        }
+        userConnectionUI(message.senderID);
         let time = formatTimeForIndia(message.createdAt);
-        messages[message.senderID].message.push({ content: message.content, type: message.type, time: time, id: message.id, userName: message.ownerName, mediaUrl: message.mediaUrl });
+        if (message.media) {
+            // messages[message.senderID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey });
+            
+             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, userName: message.sender.name }, false);
+            
+            
+
+        } else {
+            // messages[message.senderID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, });
+           
+             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, userName: message.sender.name }, false);
+            
+        }
+        chatUI[message.senderID].push(messageUI);
+        if(message.recieverID===window.currentId){
+           currentChatUI.append(messageUI);
+           currentChatUI.scroll=currentChatUI.scrollHeight;
+        }
+
+
     }
+
 }
 function userConnectionUI(id) {
     let connectionUserList = document.getElementById("connection-user-list");
@@ -116,37 +150,24 @@ function userConnectionUI(id) {
 }
 
 
-const socket = new io("http://localhost:3000", {
-    auth: {
-        token: localStorage.getItem("token")
-    }
-});
+
 socket.emit("user-online");
 
 socket.on("new-message", async (message, chat) => {
-    let time = formatTimeForIndia(message.createdAt);
-   
+
     try {
+
         if (chat === "chat") {
-            messageUpdate(message);
-            if ((message.sender.email === localStorage.getItem("email")) && (window.currentId == message.reciever.id)) {
-                messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaUrl: message.mediaUrl }, true);
-            }
-            if (window.currentId == message.sender.id) {
-                messageInChat({ content: message.content, type: message.type, time: time, id: message.id, userName: message.ownerName, mediaUrl: message.mediaUrl }, false);
-            }
+            
+           await messageUpdate(message);
+            
         }
         if (chat === "group") {
+            
             addGroupMessage(message);
-            if (window.currentId == message.groupInfo.id) {
-                if (message.senderInfo.email === localStorage.getItem("email")) {
-                    messageInChat({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaUrl: message.mediaUrl, status: message.status, time: time }, true);
-                } else {
-                    messageInChat({ userName: message.senderInfo.name, id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaUrl: message.mediaUrl, time: time }, false);
-                }
-            }
         }
-
+        
+        // Auto-scroll
     } catch (error) {
         console.log("Error in receiving message via socket:", error);
     }
@@ -173,10 +194,11 @@ async function sendMessage() {
             alert("Message cannot be empty");
             return;
         }
-
+        messageInput.value = "";
         // Save message to server
         if (window.chat === "chat") {
             socket.emit("send-message", text, window.currentId, "chat");
+
 
         }
         if (window.chat === "group") {
@@ -190,55 +212,72 @@ async function sendMessage() {
     }
 }
 
-function addContentInChat(message) {
+async function addContentInChat(message) {
 
 
-    let content = "";
-
+    try {
+        let content = "";
+    let metadata={type:"text"};
+    
+    if (message.type!=="text") {
+        
+        let url=`${awsUrl}${message.mediaKey}`;
+       
+        metadata = await getFileMeta(url);
+     
+    }
+      
+   
     switch (message.type) {
         case "image":
-            content = `<img src="${message.mediaUrl}" class="chat-image" />`;
+            content = `<img src="${awsUrl}${message.thumbKey}" class="chat-image content blurred" />
+            <button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>
+            `;
             break;
 
         case "video":
             content = `
-        <video controls class="chat-video">
-          <source src="${message.mediaUrl}" />
-        </video>`;
+          <img src="${awsUrl}${message.thumbKey}" class="chat-image content blurred"/>
+          <button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>`;
             break;
 
         case "audio":
             content = `
-        <audio controls class="chat-audio">
-          <source src="${message.mediaUrl}" />
-        </audio>`;
+        <audio controls class="chat-audio content"></audio>
+        <button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>`;
             break;
 
         case "document":
             content = `
-        <a href="${message.mediaUrl}" target="_blank" class="chat-file">
+        <a  target="_blank" class="chat-file content">
           📎 Download File
-        </a>`;
+        </a><button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>`;
             break;
 
         default:
             content = `<p>${message.content}</p>`;
     }
 
-    return content;
+     return content;
+    } catch (error) {
+        console.log(message);
+        console.log(error.message);
+    }
 }
-function messageInChat(data, sent) {
-    let chartStartUI = document.getElementById("chatMessages");
+async function messageInChat(data, sent) {
+   
     const msgDiv = document.createElement("div");
     msgDiv.id = data.id;
-    let content = addContentInChat(data);
+    let content = await addContentInChat(data);
     if (sent) {
         msgDiv.className = "message sent";
         msgDiv.innerHTML = data.status == "sent" ? `
             ${content}
+            
             <span class="timestamp">${data.time}✔</span>
         `: `
             ${content}
+            
             <span class="timestamp">${data.time}✔✔</span>
         `;
     } else {
@@ -246,13 +285,12 @@ function messageInChat(data, sent) {
         msgDiv.innerHTML = `
             <span class="name">${data.userName}</span>
             ${content}
+            
             <span class="timestamp" >${data.time}</span>
         `;
     }
-    chartStartUI.appendChild(msgDiv);
-    messageInput.value = "";
-    // Auto-scroll
-    chartStartUI.scrollTop = chartStartUI.scrollHeight;
+
+    return msgDiv;
 }
 
 
@@ -314,6 +352,9 @@ socket.on("user-search", (users) => {
                     message: []
                 };
             }
+            if(!chatUI[window.currentId]){
+                chatUI[window.currentId]=[];
+            }
             chartingStart();
 
         });
@@ -333,23 +374,20 @@ function chartingStart() {
 
     if (window.chat === "chat") {
         pName.textContent = messages[window.currentId].name;
-        messages[window.currentId].message.forEach((m) => {
-            if (m.userName) {
-                messageInChat(m, false);
-            } else {
-                messageInChat(m, true);
-            }
+        addMemberBtn.style.display="none";
+        chatUI[window.currentId].forEach((e) => {
+            chartStartUI.append(e);
         });
     }
     if (window.chat === "group") {
         pName.textContent = groupMessages[window.currentId].name;
-        groupMessages[window.currentId].message.forEach((m) => {
-            if (m.userName) {
-                messageInChat(m, false);
-            } else {
-                messageInChat(m, true);
-            }
-        })
+        
+        if(!chatUI[window.currentId]){
+          chatUI[window.currentId]=[];
+        }
+        chatUI[window.currentId].forEach((e) => {
+            chartStartUI.append(e);
+        });
     }
 
 }
@@ -396,42 +434,62 @@ let addMemberBtn = document.getElementById("add-member");
 const groupMessages = {};
 socket.on("create-group-ack", (group) => {
     try {
-        groupMessages[group.groupID] = {
+        groupMessages[group.id] = {
             name: group.name,
             message: []
         }
-        addGroupInList({ id: group.groupID, name: group.name });
+     
+        
+        
+        addGroupInList({ id: group.id, name: group.name });
         addMemberBtn.style.display = "flex";
         window.chat = "group";
         window.currentId = group.id;
         let chatUI = document.getElementById("chat-start");
         chatUI.style.display = "flex";
-        if (!groupMessages[group.id]) {
-            groupMessages[group.id] = {
-                name: group.name,
-                message: []
-            }
-        }
         chartingStart();
     } catch (error) {
         console.log(error);
     }
 });
-function addGroupMessage(message) {
-
-    if (!groupMessages[message.groupID]) {
-        groupMessages[message.groupID] = {
-            name: message.groupInfo.name,
-            message: []
-        }
-    }
+async function addGroupMessage(message) {
+    if (!groupMessages[message.group.id]) {
+                groupMessages[message.group.id] = {
+                    name: message.group.name,
+                    message: []
+                }
+            }
+            if (!chatUI[message.group.id]) {
+                chatUI[message.group.id] = [];
+            }
     let time = formatTimeForIndia(message.createdAt);
-    if (message.senderInfo.email === localStorage.getItem("email")) {
-        groupMessages[message.groupID].message.push({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaUrl: message.mediaUrl, status: message.status, time: time });
+    let currentChatUI = document.getElementById("chatMessages");
+    let messageUI;
+    if (message.sender.email === localStorage.getItem("email")) {
+        if (message.media) {
+            //groupMessages[message.groupID].message.push({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaKey: message.groupMedia.mediaKey, thumbKey: message.groupMedia.thumbKey, status: message.status, time: time });
+            messageUI = await messageInChat({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, status: message.status, time: time }, true)
+
+        } else {
+            messageUI = await messageInChat({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, status: message.status, time: time }, true);
+
+        }
+
+
     } else {
-        groupMessages[message.groupID].message.push({ userName: message.senderInfo.name, id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaUrl: message.mediaUrl, time: time });
+        if (message.media) {
+            messageUI = await messageInChat({ userName: message.sender.name, id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, time: time }, false);
+
+        } else {
+            messageUI = await messageInChat({ userName: message.sender.name, id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, time: time }, false)
+        }
+
     }
-    addGroupInList(message.groupInfo);
+    chatUI[message.groupID].push(messageUI);
+    if (message.groupID === window.currentId) {
+        currentChatUI.append(messageUI);
+    }
+    addGroupInList(message.group);
 }
 function addGroupInList(group) {
 
@@ -473,18 +531,25 @@ async function recoverGroupMessage() {
                 authorization: localStorage.getItem("token"),
             }
         });
-
+      
         response.data.groups.forEach((g) => {
-            groupMessages[g.group.id] = {
-                name: g.group.name,
-                message: []
+            if (!groupMessages[g.group.id]) {
+                groupMessages[g.group.id] = {
+                    name: g.group.name,
+                    message: []
+                }
+            }
+            if (!chatUI[g.group.id]) {
+                chatUI[g.group.id] = [];
             }
             addGroupInList(g.group);
         });
-        response.data.messages.forEach((m) => {
+
+       for(const m of response.data.messages){
+     
             addGroupMessage(m);
-            addGroupInList(m.groupInfo);
-        })
+
+        }
     } catch (error) {
         console.log(error);
     }
@@ -524,7 +589,9 @@ socket.on("search-member", (users) => {
         p.style.borderBottom = "3px solid black";
         div.appendChild(p);
         div.addEventListener("click", (e) => {
-            socket.emit("add-member", window.currentId, u.id);
+            socket.emit("add-member", window.currentId, u.id,(res)=>{
+                alert(res);
+            });
             addMemberInput.value = "";
             addMemberListUI.innerHTML = "";
             addMemberUI.style.display = "none";
@@ -533,11 +600,14 @@ socket.on("search-member", (users) => {
         addMemberListUI.append(div);
     })
 })
-socket.on("already-exit", () => {
-    alert("This member already exits");
-});
-socket.on("add-member", (userID, groupID) => {
-    alert("add Member");
+
+socket.on("add-member", (group) => {
+    groupMessages[group.id] = {
+            name: group.name,
+            message: []
+        }
+        chatUI[group.id]=[];
+     addGroupInList(group);
 });
 
 let selectedFile = null;
@@ -552,14 +622,17 @@ function selectType(type) {
     input.click();
     document.getElementById("options").style.display = "none";
 }
-
+let sendBtn = document.getElementById("sendMedia");
+let url;
 document.getElementById("mediaInput").addEventListener("change", (e) => {
-    let sendBtn = document.getElementById("sendMedia");
+
     sendBtn.style.display = "flex";
+    let cancelBn = document.getElementById("cancelMedia");
+    cancelBn.style.display = "flex";
     selectedFile = e.target.files[0];
     const preview = document.getElementById("preview");
     preview.innerHTML = "";
-
+    selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
     let previewURL = null;
@@ -589,36 +662,33 @@ document.getElementById("mediaInput").addEventListener("change", (e) => {
       </div>
     `;
     }
-});
 
-async function send() {
+
+
+
+});
+sendBtn.addEventListener("click", (e) => {
+
+
+    sendMedia(selectedFile, url);
+    deletePreview();
+
+});
+function deletePreview() {
     let sendBtn = document.getElementById("sendMedia");
     sendBtn.style.display = "none";
-    if (!selectedFile) {
-        alert("Select a file first");
-        return;
-    }
-
-     const formData = new FormData();
-      formData.append("file", selectedFile);
-      if(window.chat==="chat"){
-        formData.append("chat",window.currentId);
-      }
-      if(window.chat==="group"){
-        formData.append("group",window.currentId);
-      }
-     let response=await axios.post("api/message/upload",formData,{
-        headers: {
-          authorization: localStorage.getItem("token")
-       }
-     });
-     console.log(response.data.url);
-   
-
-
-
-
+    let cancelBn = document.getElementById("cancelMedia");
+    cancelBn.style.display = "none";
+    const preview = document.getElementById("preview");
+    preview.innerHTML = "";
     selectedFile = null;
-    document.getElementById("preview").innerHTML = "";
 }
-
+let openPickerBtn = document.getElementById("open-picker");
+openPickerBtn.addEventListener("click", (e) => {
+    const preview = document.getElementById("preview");
+    if (preview.innerHTML !== "") {
+        deletePreview();
+    } else {
+        openPicker();
+    }
+});

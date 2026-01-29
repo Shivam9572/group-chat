@@ -12,10 +12,12 @@ const upload = multer({
       const ext = file.originalname.split(".").pop();
       cb(null, `chat/${uuid()}.${ext}`);
     }
-  }),
-  limits: {
-    fileSize: 50 * 1024 * 1024 // ✅ 50MB
-  }
+  })
+});
+
+ export const uploads = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 });
 
 export default upload;
