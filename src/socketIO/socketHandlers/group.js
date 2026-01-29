@@ -2,17 +2,21 @@ import Group from "../../models/group.js";
 import GroupMember from "../../models/groupMember.js";
 import GroupMessage from "../../models/groupMessage.js";
 import User from "../../models/user.js";
+import sequelize from "../../utils/DB.js";
 
 export const createGroup=(socket)=>{
     socket.on("create-group",async(name)=>{
         try {
-            let group=await Group.create({name:name,createdBy:socket.user.id});
+            let t=await sequelize.transaction();
+            let group=await Group.create({name:name,createdBy:socket.user.id},{transaction:t});
             group=group.toJSON();
             
-            await GroupMember.create({role:"admin",groupID:group.id,userID:socket.user.id});
+            await GroupMember.create({role:"admin",groupID:group.id,userID:socket.user.id},{transaction:t});
             socket.emit("create-group-ack",group);
+            await t.commit();
 
         } catch (error) {
+            await t.rollback();
             console.log(error);
         }
     })

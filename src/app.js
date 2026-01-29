@@ -14,7 +14,7 @@ import connectToWebSocket from  "./socketIO/connectToServer.js";
 import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routers/userRouter.js';
 import messageRoutes from './routers/messageRouter.js';
-
+import {cronJob} from "./service/cron.js";
 
 
 const app = express();
