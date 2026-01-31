@@ -10,25 +10,25 @@ async function sendMedia(file, url) {
 
   const formData = new FormData();
   formData.append("file", file);
- 
 
-  let {progressText,bubble} =  showPreviewChat(file, url);
+
+  let { progressText, bubble } = showPreviewChat(file, url);
   let chartStartUI = document.getElementById("chatMessages");
   chartStartUI.append(bubble);
-   if (window.chat === "chat") {
+  if (window.chat === "chat") {
     userConnectionUI(window.currentId);
     formData.append("chat", window.currentId);
-    
+
   }
   if (window.chat === "group") {
-   
-    addGroupInList({id:window.currentId,name:groupMessages[window.currentId].name})
+
+    addGroupInList({ id: window.currentId, name: groupMessages[window.currentId].name })
     formData.append("group", window.currentId);
-    
+
   }
   chatUI[window.currentId].push(bubble);
-  
-  
+
+
   // 1️⃣ get upload url
   try {
     const res = await axios.post("/api/message/upload-url", {
@@ -46,7 +46,7 @@ async function sendMedia(file, url) {
 
 
     // 2️⃣ upload to S3 with progress
-    let [resolve, reject] = await uploadWithProgress(progressText, uploadUrl, file,key);
+    let [resolve, reject] = await uploadWithProgress(progressText, uploadUrl, file, key);
 
 
     let chat = (window.chat === "chat") ? "chat" : "group";
@@ -67,9 +67,9 @@ async function sendMedia(file, url) {
       mediaType: type,
       mediaKey: key,
     }, chat, window.currentId, (res) => {
-      
+
       let time = formatTimeForIndia(res.time);
-      bubble.id=res.id;
+      bubble.id = res.id;
       if (res.delivered === true) {
         progressText.textContent = `${time} ✔✔`;
       } else {
@@ -97,7 +97,7 @@ function showPreviewChat(file, url) {
         <p>📄<a href=${url} target="_blank"> ${file.name}</a></p>
       </div>`
   }
-  
+
   const overlay = document.createElement("div");
   overlay.className = "progress-overlay";
   let progressText = document.createElement("div");
@@ -107,12 +107,12 @@ function showPreviewChat(file, url) {
 
 
   bubble.appendChild(overlay);
-  
-  return {progressText,bubble};
+
+  return { progressText, bubble };
 
 
 }
-async function uploadWithProgress(progressText, uploadUrl, file,key) {
+async function uploadWithProgress(progressText, uploadUrl, file, key) {
   return new Promise(async (resolve, reject) => {
 
     try {
@@ -153,7 +153,7 @@ function reciveMediaChat(data) {
         <p>📄 ${file.name}</p>
       </div>`
   }
-  
+
   const overlay = document.createElement("div");
   overlay.className = "progress-overlay";
   let progressText = document.createElement("div");
@@ -169,12 +169,12 @@ function reciveMediaChat(data) {
 
 }
 socket.on("recieve-media", (data, chat) => {
-  
+
   if (chat === "chat") {
-    
-    
-    
-   
+
+
+
+
     messageUpdate(data.message);
     userConnectionUI(data.message.sender.id);
   }
@@ -186,10 +186,10 @@ socket.on("recieve-media", (data, chat) => {
       }
     }
     let time = formatTimeForIndia(data.message.createdAt);
-    
-    addGroupMessage({...data.message,time:time});
+
+    addGroupMessage({ ...data.message, time: time });
     addGroupInList(data.message.group);
-    
+
   }
 
 });
@@ -198,12 +198,12 @@ async function download(btn) {
   let id = btn.id;
 
 
-   dowmloadWithProgress(btn,id);
+  dowmloadWithProgress(btn, id);
 }
 async function dowmloadWithProgress(btn, id) {
   let parent = btn.parentNode;
   let content = parent.getElementsByClassName("content")[0];
-  
+
   let metadata = await getFileMeta(id);
   let blobUrl;
   let res = await axios.get(id, {
@@ -219,30 +219,35 @@ async function dowmloadWithProgress(btn, id) {
       }
     },
   });
-  blobUrl=URL.createObjectURL(res.data);
+  blobUrl = URL.createObjectURL(res.data);
   if (metadata.type == "video") {
     content.remove();
-     content = document.createElement("video");
+
+    content = document.createElement("video");
     content.className = "chat-video";
     content.controls = true;
-    parent.prepend(content);
-    content.src=blobUrl;
+    if (parent.firstElementChild) {
+      parent.firstElementChild.after(content);
+    } else {
+      parent.appendChild(content); // if no child exists
+    }
+    content.src = blobUrl;
 
   }
-  else if(metadata.type == "audio"){
-    content.controls=true;
-    content.src=blobUrl;
+  else if (metadata.type == "audio") {
+    content.controls = true;
+    content.src = blobUrl;
   }
-  else if(metadata.type==="image"){
-    content.src=blobUrl;
+  else if (metadata.type === "image") {
+    content.src = blobUrl;
   }
-  else{
-    content.href=blobUrl;
+  else {
+    content.href = blobUrl;
   }
-  
-  
+
+
   content.classList.remove("blurred");
- 
+
 
 
 }

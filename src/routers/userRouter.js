@@ -9,6 +9,7 @@ import authentication from "../middleWare/authentication.js";
 
 router.post("/login", loginUser);
 router.post("/signup", createUser);
+
 router.post("/authenticate",authentication ,(req,res)=>{
       res.status(200).json({message:"User authenticated",userId:req.userId,name:req.name});
 })

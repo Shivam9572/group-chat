@@ -8,6 +8,7 @@ import { createImageThumbnail, getImageThumbPath, getVideoThumbPath, createVideo
 import { cleanupFiles } from "../../utils/temp.js";
 import { downloadFromS3, uploadThumbToS3, getObjectUrl } from "../../service/s3.js";
 import sequelize from "../../utils/DB.js";
+import getSentencePrediction from "../../service/geimini.js";
 export const chat = (io, socket, connection) => {
     socket.on("send-message", (text, id, chat) => {
         if (chat === "chat") {
@@ -104,4 +105,23 @@ export const chat = (io, socket, connection) => {
             console.log(error);
         }
     });
+     socket.on("typing_input", async (data) => {
+    try {
+      const { lastMessage, currentText } = data;
+      
+
+      // Avoid AI call for very small input
+      if (!currentText) {
+        return socket.emit("smart_replies", "");
+      }
+
+      const replies = await getSentencePrediction({lastMessage,currentText});
+
+      socket.emit("smart_replies", replies);
+
+    } catch (err) {
+      console.error(err);
+      socket.emit("smart_replies", "");
+    }
+  });
 }

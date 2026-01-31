@@ -3,31 +3,55 @@
 let awsUrl = "https://group-chat-9572.s3.ap-south-1.amazonaws.com/";
 let messages = {};
 const chatUI = {};
+const lastConversations= new Map();
 async function getFileMeta(url) {
-  const res = await fetch(url, { method: "HEAD" });
-  let type = getMediaType(res.headers.get("content-type"));
-  let size = formatSize(res.headers.get("content-length"));
-  return {
-    type,     // image/png
-    size   // bytes
-  };
+    const res = await fetch(url, { method: "HEAD" });
+    let type = getMediaType(res.headers.get("content-type"));
+    let size = formatSize(res.headers.get("content-length"));
+    return {
+        type,     // image/png
+        size   // bytes
+    };
+}
+function extractShortText(text, limit = 8) {
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(-limit)
+        .join(" ");
+}
+function storeConversationFIFO(userId, message) {
+    const shortText = extractShortText(message, 8);
+    if (!shortText) return;
+
+    let chats = lastConversations.get(userId) || "";
+
+    // 👉 Agar limit reach ho chuki hai
+     // ✅ current chat add
+     chats=message;
+    lastConversations.set(userId, chats);
+}
+function getContextForAI(userId) {
+  return (lastConversations.get(userId) || "");
 }
 
 function formatSize(bytes) {
-  if (!bytes) return "Unknown";
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return (bytes / Math.pow(1024, i)).toFixed(2) + " " + sizes[i];
+    if (!bytes) return "Unknown";
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(2) + " " + sizes[i];
 }
 
 function getMediaType(mime) {
-  if (!mime) return "text";
+    if (!mime) return "text";
 
-  if (mime.startsWith("image/")) return "image";
-  if (mime.startsWith("video/")) return "video";
-  if (mime.startsWith("audio/")) return "audio";
+    if (mime.startsWith("image/")) return "image";
+    if (mime.startsWith("video/")) return "video";
+    if (mime.startsWith("audio/")) return "audio";
 
-  return "text";
+    return "text";
 }
 async function recoverMessage() {
     try {
@@ -37,9 +61,9 @@ async function recoverMessage() {
             }
         });
 
-       for(data of response.data.messages) {
+        for (data of response.data.messages) {
             await messageUpdate(data);
-            
+
             if (data.sender.email === localStorage.getItem("email")) {
                 userConnectionUI(data.recieverID);
             } else {
@@ -54,7 +78,7 @@ async function recoverMessage() {
 }
 recoverMessage();
 async function messageUpdate(message) {
-  
+
     let currentChatUI = document.getElementById("chatMessages");
     let messageUI;
     if (message.sender.email === localStorage.getItem("email")) {
@@ -65,6 +89,10 @@ async function messageUpdate(message) {
                 message: []
             };
         }
+        if ((message.content !== "") && (message.type === "text")) {
+            storeConversationFIFO(message.recieverID, message.content);
+
+        }
         if (!chatUI[message.recieverID]) {
             chatUI[message.recieverID] = [];
         }
@@ -73,16 +101,16 @@ async function messageUpdate(message) {
         let time = formatTimeForIndia(message.createdAt);
 
         if (message.media) {
-             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey }, true);  
-               
+            messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey }, true);
+
         } else {
             //  messages[message.recieverID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, });
-             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, }, true);  
+            messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, }, true);
         }
         chatUI[message.recieverID].push(messageUI);
-        if(message.recieverID===window.currentId){
-           currentChatUI.append(messageUI);
-           currentChatUI.scroll=currentChatUI.scrollHeight;
+        if (message.recieverID === window.currentId) {
+            currentChatUI.append(messageUI);
+            currentChatUI.scrollTop = currentChatUI.scrollHeight;
         }
     } else {
         if (!messages[message.senderID]) {
@@ -92,6 +120,10 @@ async function messageUpdate(message) {
                 message: []
             };
         }
+        if ((message.content !== "") && (message.type === "text")) {
+            storeConversationFIFO(message.senderID, message.content);
+
+        }
         if (!chatUI[message.senderID]) {
             chatUI[message.senderID] = [];
         }
@@ -99,27 +131,32 @@ async function messageUpdate(message) {
         let time = formatTimeForIndia(message.createdAt);
         if (message.media) {
             // messages[message.senderID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey });
-            
-             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, userName: message.sender.name }, false);
-            
-            
+
+            messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, userName: message.sender.name }, false);
+
+
 
         } else {
             // messages[message.senderID].message.push({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, });
-           
-             messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, userName: message.sender.name }, false);
-            
+
+            messageUI = await messageInChat({ content: message.content, type: message.type, time: time, id: message.id, status: message.status, userName: message.sender.name }, false);
+
         }
         chatUI[message.senderID].push(messageUI);
-        if(message.recieverID===window.currentId){
-           currentChatUI.append(messageUI);
-           currentChatUI.scroll=currentChatUI.scrollHeight;
+        if (message.senderID === window.currentId) {
+            currentChatUI.append(messageUI);
+            currentChatUI.scrollTop  = currentChatUI.scrollHeight;
         }
 
 
     }
 
 }
+let scrollBtn=document.getElementById("scroll-top");
+scrollBtn.addEventListener("click",()=>{
+    let chatMesssages=document.getElementById("chatMessages");
+    chatMesssages.scrollTop=chatMesssages.scrollHeight;
+})
 function userConnectionUI(id) {
     let connectionUserList = document.getElementById("connection-user-list");
 
@@ -158,15 +195,15 @@ socket.on("new-message", async (message, chat) => {
     try {
 
         if (chat === "chat") {
-            
-           await messageUpdate(message);
-            
+
+            await messageUpdate(message);
+
         }
         if (chat === "group") {
-            
+
             addGroupMessage(message);
         }
-        
+
         // Auto-scroll
     } catch (error) {
         console.log("Error in receiving message via socket:", error);
@@ -217,55 +254,55 @@ async function addContentInChat(message) {
 
     try {
         let content = "";
-    let metadata={type:"text"};
-    
-    if (message.type!=="text") {
-        
-        let url=`${awsUrl}${message.mediaKey}`;
-       
-        metadata = await getFileMeta(url);
-     
-    }
-      
-   
-    switch (message.type) {
-        case "image":
-            content = `<img src="${awsUrl}${message.thumbKey}" class="chat-image content blurred" />
+        let metadata = { type: "text" };
+
+        if (message.type !== "text") {
+
+            let url = `${awsUrl}${message.mediaKey}`;
+
+            metadata = await getFileMeta(url);
+
+        }
+
+
+        switch (message.type) {
+            case "image":
+                content = `<img src="${awsUrl}${message.thumbKey}" class="chat-image content blurred" />
             <button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>
             `;
-            break;
+                break;
 
-        case "video":
-            content = `
+            case "video":
+                content = `
           <img src="${awsUrl}${message.thumbKey}" class="chat-image content blurred"/>
           <button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>`;
-            break;
+                break;
 
-        case "audio":
-            content = `
+            case "audio":
+                content = `
         <audio controls class="chat-audio content"></audio>
         <button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>`;
-            break;
+                break;
 
-        case "document":
-            content = `
+            case "document":
+                content = `
         <a  target="_blank" class="chat-file content">
           📎 Download File
         </a><button class="overlay-btn" onclick="download(this)" id="${awsUrl}${message.mediaKey}"><span>${message.type}</span> <span>${metadata.size}</span><i class="fa-solid fa-arrow-down"></i></button>`;
-            break;
+                break;
 
-        default:
-            content = `<p>${message.content}</p>`;
-    }
+            default:
+                content = `<p>${message.content}</p>`;
+        }
 
-     return content;
+        return content;
     } catch (error) {
         console.log(message);
         console.log(error.message);
     }
 }
 async function messageInChat(data, sent) {
-   
+
     const msgDiv = document.createElement("div");
     msgDiv.id = data.id;
     let content = await addContentInChat(data);
@@ -297,6 +334,45 @@ async function messageInChat(data, sent) {
 // Send on Enter key
 messageInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessage();
+});
+socket.on("smart_replies", (replies) => {
+    if(replies.length==0){
+        return;
+    }
+    aiSuggest.style.display="flex";
+    replies.forEach((e)=>{
+        addReply(e);
+    })
+});
+let aiSuggest=document.getElementById("ai-suggest");
+function addReply(message){
+    let btn=document.createElement("button");
+    btn.textContent=message;
+    btn.addEventListener("click",(e)=>{
+        aiSuggest.style.display="none";
+        messageInput.value=e.target.textContent;
+        aiSuggest.innerHTML="";
+
+    });
+    aiSuggest.append(btn);
+}
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+const sendTyping = debounce((value) => {
+    let lastMessage=getContextForAI(window.currentId);
+     socket.emit("typing_input", { currentText: value, lastMessage });
+    
+    
+   
+}, 2000);
+
+messageInput.addEventListener("input", (e) => {
+    sendTyping(e.target.value);
 });
 let newChatButton = document.getElementById("new-chat");
 newChatButton.addEventListener("click", (e) => {
@@ -352,8 +428,8 @@ socket.on("user-search", (users) => {
                     message: []
                 };
             }
-            if(!chatUI[window.currentId]){
-                chatUI[window.currentId]=[];
+            if (!chatUI[window.currentId]) {
+                chatUI[window.currentId] = [];
             }
             chartingStart();
 
@@ -363,6 +439,8 @@ socket.on("user-search", (users) => {
     });
 
 });
+ 
+
 
 function chartingStart() {
     let chartUI = document.getElementById("chat-start");
@@ -374,16 +452,16 @@ function chartingStart() {
 
     if (window.chat === "chat") {
         pName.textContent = messages[window.currentId].name;
-        addMemberBtn.style.display="none";
+        addMemberBtn.style.display = "none";
         chatUI[window.currentId].forEach((e) => {
             chartStartUI.append(e);
         });
     }
     if (window.chat === "group") {
         pName.textContent = groupMessages[window.currentId].name;
-        
-        if(!chatUI[window.currentId]){
-          chatUI[window.currentId]=[];
+
+        if (!chatUI[window.currentId]) {
+            chatUI[window.currentId] = [];
         }
         chatUI[window.currentId].forEach((e) => {
             chartStartUI.append(e);
@@ -438,9 +516,9 @@ socket.on("create-group-ack", (group) => {
             name: group.name,
             message: []
         }
-     
-        
-        
+
+
+
         addGroupInList({ id: group.id, name: group.name });
         addMemberBtn.style.display = "flex";
         window.chat = "group";
@@ -454,23 +532,29 @@ socket.on("create-group-ack", (group) => {
 });
 async function addGroupMessage(message) {
     if (!groupMessages[message.group.id]) {
-                groupMessages[message.group.id] = {
-                    name: message.group.name,
-                    message: []
-                }
-            }
-            if (!chatUI[message.group.id]) {
-                chatUI[message.group.id] = [];
+        groupMessages[message.group.id] = {
+            name: message.group.name,
+            message: []
+        }
+    }
+    if (!chatUI[message.group.id]) {
+        chatUI[message.group.id] = [];
+    }
+    if ((message.content !== "") && (message.type === "text")) {
+                storeConversationFIFO(message.group.id, message.content);
+
             }
     let time = formatTimeForIndia(message.createdAt);
     let currentChatUI = document.getElementById("chatMessages");
     let messageUI;
     if (message.sender.email === localStorage.getItem("email")) {
         if (message.media) {
+
             //groupMessages[message.groupID].message.push({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaKey: message.groupMedia.mediaKey, thumbKey: message.groupMedia.thumbKey, status: message.status, time: time });
             messageUI = await messageInChat({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, status: message.status, time: time }, true)
 
         } else {
+            
             messageUI = await messageInChat({ id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, status: message.status, time: time }, true);
 
         }
@@ -481,6 +565,7 @@ async function addGroupMessage(message) {
             messageUI = await messageInChat({ userName: message.sender.name, id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, mediaKey: message.media.mediaKey, thumbKey: message.media.thumbKey, time: time }, false);
 
         } else {
+             
             messageUI = await messageInChat({ userName: message.sender.name, id: message.id, content: message.content, type: message.type, isDeleted: message.isDeleted, time: time }, false)
         }
 
@@ -488,6 +573,7 @@ async function addGroupMessage(message) {
     chatUI[message.groupID].push(messageUI);
     if (message.groupID === window.currentId) {
         currentChatUI.append(messageUI);
+        currentChatUI.scrollTop=currentChatUI.scrollHeight;
     }
     addGroupInList(message.group);
 }
@@ -531,7 +617,7 @@ async function recoverGroupMessage() {
                 authorization: localStorage.getItem("token"),
             }
         });
-      
+
         response.data.groups.forEach((g) => {
             if (!groupMessages[g.group.id]) {
                 groupMessages[g.group.id] = {
@@ -545,8 +631,8 @@ async function recoverGroupMessage() {
             addGroupInList(g.group);
         });
 
-       for(const m of response.data.messages){
-     
+        for (const m of response.data.messages) {
+
             addGroupMessage(m);
 
         }
@@ -589,7 +675,7 @@ socket.on("search-member", (users) => {
         p.style.borderBottom = "3px solid black";
         div.appendChild(p);
         div.addEventListener("click", (e) => {
-            socket.emit("add-member", window.currentId, u.id,(res)=>{
+            socket.emit("add-member", window.currentId, u.id, (res) => {
                 alert(res);
             });
             addMemberInput.value = "";
@@ -603,11 +689,11 @@ socket.on("search-member", (users) => {
 
 socket.on("add-member", (group) => {
     groupMessages[group.id] = {
-            name: group.name,
-            message: []
-        }
-        chatUI[group.id]=[];
-     addGroupInList(group);
+        name: group.name,
+        message: []
+    }
+    chatUI[group.id] = [];
+    addGroupInList(group);
 });
 
 let selectedFile = null;
