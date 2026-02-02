@@ -11,7 +11,7 @@ import http from 'http';
 import db from "./utils/DB.js";
 import models from "./models/association.js";
 import connectToWebSocket from  "./socketIO/connectToServer.js";
-import errorHandler from './middleware/errorHandler.js';
+import errorHandler from './middleWare/errorHandler.js';
 import userRoutes from './routers/userRouter.js';
 import messageRoutes from './routers/messageRouter.js';
 import {cronJob} from "./service/cron.js";
